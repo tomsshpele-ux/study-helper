@@ -10,14 +10,16 @@ bot = telebot.TeleBot(BOT_TOKEN)
 client = Groq(api_key=GROQ_API_KEY)
 app = Flask(__name__)
 
-
 @app.route('/', methods=['POST'])
-
-
-    json_string = request.get_data().decode('utf-8')
-    update = telebot.types.Update.de_json(json_string)
-    bot.process_new_updates([update])
-    return "!", 200
+def getMessage():
+    try:
+        json_string = request.get_data().decode('utf-8')
+        update = telebot.types.Update.de_json(json_string)
+        bot.process_new_updates([update])
+        return "!", 200
+    except Exception as e:
+        print(e)
+        return "Error", 500
 
 @bot.message_handler(func=lambda message: True)
 def handle_student_request(message):
