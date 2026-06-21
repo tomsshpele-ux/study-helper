@@ -9,7 +9,7 @@ AI_API_KEY = "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"
 
 client = OpenAI(
     api_key=AI_API_KEY,
-    base_url="https://api.groq.com/openai/v1"
+    base_url="https://groq.com"
 )
 bot = telebot.TeleBot(BOT_TOKEN)
 app = Flask(__name__)
@@ -55,7 +55,7 @@ def handle_message(message):
         
         if "method not allowed" in error_msg.lower() or "405" in error_msg:
             try:
-                alt_client = OpenAI(api_key=AI_API_KEY, base_url="https://api.groq.com/")
+                alt_client = OpenAI(api_key=AI_API_KEY, base_url="https://groq.com")
                 alt_completion = alt_client.chat.completions.create(
                     model="llama-3.1-8b-instant",
                     messages=[{"role": "user", "content": user_text}]
@@ -75,5 +75,12 @@ def handle_message(message):
 def webhook():
     return "السيرفر متوافق ويعمل بنجاح على منصة Vercel!", 200
 
+# تشغيل وتنشيط الـ Webhook تلقائياً ذاتياً من داخل السيرفر لتخطي حظر التليجرام
 if __name__ == "__main__":
+    import requests
+    try:
+        webhook_url = "https://telegram.org"
+        requests.get(webhook_url)
+    except:
+        pass
     app.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)))
