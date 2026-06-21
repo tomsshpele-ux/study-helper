@@ -1,44 +1,38 @@
 import os
 import telebot
-from openai import OpenAI
+from flask import Flask, request
+from groq import Groq
 
-# جلب المفاتيح بأمان من سيرفر الاستضافة لمنع سرقتها
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-AI_API_KEY = os.getenv("AI_API_KEY")
+BOT_TOKEN = os.environ.get('BOT_TOKEN')
+GROQ_API_KEY = os.environ.get('GROQ_API_KEY')
 
-if not BOT_TOKEN or not AI_API_KEY:
-    print("❌ خطأ: لم يتم العثور على المفاتيح في نظام السيرفر!")
-    exit()
+bot = telebot.TeleBot(BOT_TOKEN)
+client = Groq(api_key=GROQ_API_KEY)
+app = Flask(__name__)
 
-try:
-    client = OpenAI(api_key=AI_API_KEY, base_url="https://api.groq.com/openai/v1")
-    bot = telebot.TeleBot(BOT_TOKEN)
-    print("✅ تم إعداد البوت بنجاح.")
-except Exception as init_error:
-    print(f"❌ خطأ في الإعداد: {init_error}")
-    exit()
+@app.route('/' + BOT_TOKEN, methods=['POST'])
+def getMessage():
+    json_string = request.get_data().decode('utf-8')
+    update = telebot.types.Update.de_json(json_string)
+    bot.process_new_updates([update])
+    return "!", 200
 
 @bot.message_handler(func=lambda message: True)
-def handle_message(message):
-    chat_id = message.chat.id
-    user_text = message.text
-    status_message = bot.send_message(chat_id, "⏳ جاري التفكير وتوليد الرد عبر محرك لاما...")
-    message_id = status_message.message_id
-
+def handle_student_request(message):
     try:
         completion = client.chat.completions.create(
-            model="llama-3.1-8b-instant",
-            messages=[{"role": "user", "content": user_text}]
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "user", "content": message.text}]
         )
-        ai_reply = completion.choices[0].message.content
-        bot.edit_message_text(chat_id=chat_id, message_id=message_id, text=ai_reply)
+        response_text = completion.choices.message.content
+        bot.reply_to(message, response_text)
     except Exception as e:
-        print(f"❌ خطأ: {e}")
-        try:
-            bot.edit_message_text(chat_id=chat_id, message_id=message_id, text="🤖 واجه السيرفر مشكلة، أعد المحاولة.")
-        except:
-            pass
+        bot.reply_to(message, "عذراً، حدث خطأ أثناء معالجة الطلب.")
+        print(e)
+
+@app.route('/')
+def webhook():
+    return "البوت يعمل بنجاح كـ Webhook على منصة Vercel!", 200
 
 if __name__ == "__main__":
-    print("🚀 البوت يعمل الآن في الخلفية...")
-    bot.infinity_polling(timeout=20, long_polling_timeout=10, skip_pending=True)
+    app.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)))
