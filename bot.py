@@ -3,8 +3,9 @@ import telebot
 from flask import Flask, request
 from groq import Groq
 
-BOT_TOKEN = os.environ.get('BOT_TOKEN')
-GROQ_API_KEY = os.environ.get('GROQ_API_KEY')
+# المفاتيح مكتوبة بداخل الكود لضمان التشغيل الفوري
+BOT_TOKEN = "8645432324:AAGo_6iS9lyew9RfQakqLb2ubY1bi8Ds-Do"
+GROQ_API_KEY = "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"
 
 bot = telebot.TeleBot(BOT_TOKEN)
 client = Groq(api_key=GROQ_API_KEY)
